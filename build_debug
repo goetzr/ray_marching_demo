@@ -1,0 +1,23 @@
+#! /bin/bash
+
+# Exit immediately if any commands fail
+set -e
+
+WORKSPACE_DIR="$(dirname "${BASH_SOURCE[0]}")"
+cd "${WORKSPACE_DIR}"
+rm -rfd build &> /dev/null
+SRC_DIR=src
+
+# Ninja build
+NINJA_BUILD_DIR=build/debug/ninja
+mkdir -p "${NINJA_BUILD_DIR}"
+cmake -G Ninja -S "${SRC_DIR}" -DCMAKE_BUILD_TYPE:STRING=Debug -B "${NINJA_BUILD_DIR}"
+cmake --build "${NINJA_BUILD_DIR}"
+
+# Makefiles build
+MAKEFILES_BUILD_DIR=build/debug/makefiles
+mkdir -p "${MAKEFILES_BUILD_DIR}"
+cmake -G "Unix Makefiles" -S "${SRC_DIR}" -DCMAKE_BUILD_TYPE:STRING=Debug -B "${MAKEFILES_BUILD_DIR}"
+cmake --build "${MAKEFILES_BUILD_DIR}"
+
+ln -sf "${NINJA_BUILD_DIR}/ray_marching_demo" ray_marching_demo
