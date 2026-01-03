@@ -1,0 +1,4 @@
+{
+    "cmake.sourceDirectory": "/Users/rgoetz/projects/ray_marching_demo/src",
+    "cmake.useCMakePresets": "always"
+}

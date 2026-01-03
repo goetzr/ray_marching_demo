@@ -1,0 +1,33 @@
+{
+  "version": 3,
+  "configurePresets": [
+    {
+      "name": "Debug_Ninja",
+      "displayName": "Debug Build (Ninja)",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/debug/ninja",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug"
+      }
+    },
+    {
+      "name": "Debug_Makefiles",
+      "displayName": "Debug Build (Makefiles)",
+      "generator": "Unix Makfiles",
+      "binaryDir": "${sourceDir}/build/debug/makefiles",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "Debug_Build_Ninja",
+      "configurePreset": "Debug_Ninja"
+    },
+    {
+      "name": "Debug_Build_Makefiles",
+      "configurePreset": "Debug_Makefiles"
+    }
+  ]
+}
