@@ -5,7 +5,6 @@ set -e
 
 WORKSPACE_DIR="$(dirname "${BASH_SOURCE[0]}")"
 cd "${WORKSPACE_DIR}"
-rm -rfd build &> /dev/null
 SRC_DIR=src
 
 # Ninja build
