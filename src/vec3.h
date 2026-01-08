@@ -34,3 +34,7 @@ constexpr double dot(const Vec3& a, const Vec3& b) noexcept {
 inline std::string to_string(const Vec3& v) {
     return std::format("Vec3({}, {}, {})", v.x, v.y, v.z);
 }
+
+inline std::ostream& operator<<(std::ostream& os, const Vec3& v) {
+    return os << to_string(v);
+}

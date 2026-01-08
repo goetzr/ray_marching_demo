@@ -9,15 +9,18 @@ struct Camera {
     Vec3 up;
 };
 
-inline std::string to_string(const Camera& camera) {
-    // return std::format(
-    //     "Camera(\n"
-    //         "\tposition = {},\n"
-    //         "\tforward  = {},\n"
-    //         "\tright    = {},\n"
-    //         "\tup       = {}\n"
-    //     ")",
-    //     camera.position, camera.forward, camera.right, camera.up
-    // );
-    return std::format("{}", "camera");
+inline std::string to_string(const Camera& c) {
+    return std::format(
+        "Camera(\n"
+            "  position = {},\n"
+            "  forward  = {},\n"
+            "  right    = {},\n"
+            "  up       = {}\n"
+        ")",
+        to_string(c.position), to_string(c.forward), to_string(c.right), to_string(c.up)
+    );
+}
+
+inline std::ostream& operator<<(std::ostream& os, const Camera& c) {
+    return os << to_string(c);
 }

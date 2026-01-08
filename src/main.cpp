@@ -36,6 +36,7 @@ int main(int argc, char** argv)
         .right    = { 1, 0, 0  },
         .up       = { 0, 0, 1  }
     };
+    std::cout << camera << "\n";
 
     // ----------------------------------------------------------------------
     // Initialize SDL and create the window
