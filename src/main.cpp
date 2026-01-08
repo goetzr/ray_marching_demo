@@ -7,6 +7,9 @@
 
 #include <SDL3/SDL.h>
 
+#include "vec3.h"
+#include "camera.h"
+
 // Aspect ratio = ~1.6:1.
 constexpr int WIDTH  = 1024;
 constexpr int HEIGHT = 640;
@@ -27,6 +30,13 @@ uint32_t raymarch_pixel(int x, int y)
 
 int main(int argc, char** argv)
 {
+    Camera camera {
+        .position = { 0, 0, -1 },
+        .forward  = { 0, 0, 1  },
+        .right    = { 1, 0, 0  },
+        .up       = { 0, 0, 1  }
+    };
+
     // ----------------------------------------------------------------------
     // Initialize SDL and create the window
     // ----------------------------------------------------------------------

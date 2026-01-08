@@ -5,18 +5,20 @@
       "name": "Debug_Ninja",
       "displayName": "Debug Build (Ninja)",
       "generator": "Ninja",
-      "binaryDir": "${sourceDir}/build/debug/ninja",
+      "binaryDir": "build/debug/ninja",
       "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Debug"
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
       }
     },
     {
       "name": "Debug_Makefiles",
       "displayName": "Debug Build (Makefiles)",
       "generator": "Unix Makfiles",
-      "binaryDir": "${sourceDir}/build/debug/makefiles",
+      "binaryDir": "build/debug/makefiles",
       "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Debug"
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
       }
     }
   ],
