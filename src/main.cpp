@@ -14,30 +14,29 @@
 constexpr int WIDTH  = 1024;
 constexpr int HEIGHT = 640;
 
-// ----------------------------------------------------------------------
-// Your raymarcher will eventually compute a color per pixel.
-// For now, this is just a placeholder.
-// ----------------------------------------------------------------------
-uint32_t raymarch_pixel(int x, int y)
+/**
+ * Raymarch the specified pixel to determine its color.
+ * 
+ * @param camera  The camera.
+ * @param x       The pixel's x coordinate.
+ * @param y       The pixel's y coordinate.
+ * 
+ * @return Returns the pixel's color in ARGB8888 format.
+ */
+uint32_t raymarch_pixel(const Camera& camera, int x, int y)
 {
-    // Example: simple gradient
+    // Generate the ray direction.
+    Vec3 ray_dir = (Vec3(x, y, 0) - camera.position).normalize();
+
     uint8_t r = (uint8_t)((float)x / WIDTH * 255);
     uint8_t g = (uint8_t)((float)y / HEIGHT * 255);
     uint8_t b = 128;
 
-    return (0xFF << 24) | (r << 16) | (g << 8) | b;  // ARGB8888
+    return (0xFF << 24) | (r << 16) | (g << 8) | b;
 }
 
 int main(int argc, char** argv)
 {
-    Camera camera {
-        .position = { 0, 0, -1 },
-        .forward  = { 0, 0, 1  },
-        .right    = { 1, 0, 0  },
-        .up       = { 0, 0, 1  }
-    };
-    std::cout << camera << "\n";
-
     // ----------------------------------------------------------------------
     // Initialize SDL and create the window
     // ----------------------------------------------------------------------
@@ -83,6 +82,15 @@ int main(int argc, char** argv)
     // Allocate the CPU pixel buffer
     std::unique_ptr<uint32_t[]> pixels = std::make_unique<uint32_t[]>(WIDTH * HEIGHT);
 
+    // Create the camera and position it at (0, 0, -1).
+    Camera camera {
+        .position = { 0, 0, -1 },
+        .forward  = { 0, 0, 1  },
+        .right    = { 1, 0, 0  },
+        .up       = { 0, 0, 1  }
+    };
+    std::cout << camera << "\n";
+
     // ----------------------------------------------------------------------
     // Main Loop
     // ----------------------------------------------------------------------
@@ -102,8 +110,7 @@ int main(int argc, char** argv)
         // Compute pixels on CPU
         for (int y = 0; y < HEIGHT; y++) {
             for (int x = 0; x < WIDTH; x++) {
-                pixels[y * WIDTH + x] = 0xffff0000;
-                // pixels[y * WIDTH + x] = raymarch_pixel(x, y);
+                pixels[y * WIDTH + x] = raymarch_pixel(camera, x, y);
             }
         }
 

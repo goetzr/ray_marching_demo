@@ -27,6 +27,14 @@ public:
     double z;
 };
 
+constexpr Vec3 operator+(const Vec3& a, const Vec3& b) noexcept {
+    return { a.x + b.x, a.y + b.y, a.z + b.z };
+}
+
+constexpr Vec3 operator-(const Vec3& a, const Vec3& b) noexcept {
+    return { a.x - b.x, a.y - b.y, a.z - b.z };
+}
+
 constexpr double dot(const Vec3& a, const Vec3& b) noexcept {
     return a.x* b.x + a.y * b.y + a.z * b.z;
 }
