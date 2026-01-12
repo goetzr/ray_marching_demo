@@ -7,6 +7,8 @@ struct Camera {
     Vec3 forward;
     Vec3 right;
     Vec3 up;
+    double fov_x;
+    double fov_y;
 };
 
 inline std::string to_string(const Camera& c) {

@@ -11,7 +11,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 include(FetchContent)
 
-add_executable(ray_marching_demo main.cpp)
+add_executable(ray_marching_demo main.cpp scene.cpp)
 
 target_precompile_headers(ray_marching_demo PRIVATE pch.h)
 

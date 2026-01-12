@@ -1,38 +1,52 @@
 #include "pch.h"
 
-#include <cstdint>
-#include <cmath>
-#include <iostream>
-#include <memory>
-
 #include <SDL3/SDL.h>
 
 #include "vec3.h"
 #include "camera.h"
+#include "scene.h"
 
-// Aspect ratio = ~1.6:1.
-constexpr int WIDTH  = 1024;
-constexpr int HEIGHT = 640;
+constexpr int WIDTH  = 800;
+constexpr int HEIGHT = 600;
 
 /**
  * Raymarch the specified pixel to determine its color.
  * 
+ * @param scene   The scene holding the elements to render.
  * @param camera  The camera.
  * @param x       The pixel's x coordinate.
  * @param y       The pixel's y coordinate.
  * 
  * @return Returns the pixel's color in ARGB8888 format.
  */
-uint32_t raymarch_pixel(const Camera& camera, int x, int y)
+uint32_t raymarch_pixel(const Scene& scene, const Camera& camera, int x, int y)
 {
+    // A ray that has been marched this many steps is defined to have missed all elements in the scene.
+    static constexpr int MaxSteps = 10;
+    // A ray has hit an element in the scene if its distance to that element is less than Epsilon.
+    static constexpr double Epsilon = 0.001;
+
     // Generate the ray direction.
     Vec3 ray_dir = (Vec3(x, y, 0) - camera.position).normalize();
 
-    uint8_t r = (uint8_t)((float)x / WIDTH * 255);
-    uint8_t g = (uint8_t)((float)y / HEIGHT * 255);
-    uint8_t b = 128;
+    // March the ray until it hits an element in the scene or the maximum number of steps has been reached,
+    // meaning the ray has missed all elements in the scene.
+    ClosestElement closest_elem = scene.closest_element(camera.position);
+    double ray_len = closest_elem.distance;
+    int step = 0;
+    for (; step != MaxSteps && closest_elem.distance > Epsilon; ++step) {
+        Vec3 ray_pos = ray_dir * ray_len;
+        closest_elem = scene.closest_element(ray_pos);
+        ray_len += closest_elem.distance;
+    }
 
-    return (0xFF << 24) | (r << 16) | (g << 8) | b;
+    if (step == MaxSteps) {
+        // Ray missed all elements in the scene.
+        return 0xff000000;
+    } else {
+        // Ray hit an element.
+        return 0xffffffff;
+    }
 }
 
 int main(int argc, char** argv)
@@ -82,14 +96,24 @@ int main(int argc, char** argv)
     // Allocate the CPU pixel buffer
     std::unique_ptr<uint32_t[]> pixels = std::make_unique<uint32_t[]>(WIDTH * HEIGHT);
 
-    // Create the camera and position it at (0, 0, -1).
+    // Create the scene to render
+    Scene scene;
+    scene.add_element(std::make_unique<Sphere>(
+        Vec3{ 0, 0, 30 },   // center
+        20                  // radius
+    ));
+
+    // Create the camera
     Camera camera {
-        .position = { 0, 0, -1 },
+        .position = { 0, 0, -20 },
         .forward  = { 0, 0, 1  },
         .right    = { 1, 0, 0  },
-        .up       = { 0, 0, 1  }
+        .up       = { 0, 0, 1  },
+        .fov_x    = 60 * std::numbers::pi / 180,
+        .fov_y    = 34 * std::numbers::pi / 180
     };
-    std::cout << camera << "\n";
+
+    // TODO: Only cast rays in the camera's view!
 
     // ----------------------------------------------------------------------
     // Main Loop
@@ -110,7 +134,7 @@ int main(int argc, char** argv)
         // Compute pixels on CPU
         for (int y = 0; y < HEIGHT; y++) {
             for (int x = 0; x < WIDTH; x++) {
-                pixels[y * WIDTH + x] = raymarch_pixel(camera, x, y);
+                pixels[y * WIDTH + x] = raymarch_pixel(scene, camera, x - WIDTH/2, y - HEIGHT/2);
             }
         }
 
