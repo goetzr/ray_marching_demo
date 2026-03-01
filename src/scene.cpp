@@ -2,23 +2,24 @@
 
 #include "scene.h"
 
-ClosestElement Scene::closest_element(const Vec3& p) const noexcept {
-    auto it = elements_.begin();
-    double dist = (*it)->sdf(p);
+Result<ClosestObject, void> Scene::closest_object(const Vec3& p) const noexcept {
+    if (num_objects_ == 0 ) {
+        // No objects in the scene.
+        return Result<ClosestObject, void>::err();
+    }
 
-    ClosestElement closest_elem {
+    ClosestObject closest_elem {
         .index = 0,
-        .distance = dist
+        .distance = objects_[0].sdf(p)
     };
 
-    ++it;
-    for (int index = 1; it != elements_.end(); ++it, ++index) {
-        double dist = (*it)->sdf(p);
+    for (int i = 1; i != num_objects_; ++i) {
+        double dist = objects_[i].sdf(p);
         if (dist < closest_elem.distance) {
-            closest_elem.index = index;
+            closest_elem.index = i;
             closest_elem.distance = dist;
         }
     }
 
-    return closest_elem;
+    return Result<ClosestObject, void>::ok(closest_elem);
 }

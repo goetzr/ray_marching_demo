@@ -1,44 +1,22 @@
 #pragma once
 
-#include "vec3.h"
+#include "object.h"
 
-class Renderable {
-public:
-    virtual ~Renderable() = 0;
-    virtual double sdf(const Vec3& p) const noexcept = 0;
-};
+constexpr int MaxObjects = 100;
 
-inline Renderable::~Renderable() {}
-
-class Sphere : public Renderable {
-public:
-    Sphere(const Vec3& center, double radius)
-        : center_{center}, radius_{radius}
-    {}
-    ~Sphere() = default;
-
-    double sdf(const Vec3& p) const noexcept override {
-        return (p - center_).length() - radius_;
-    }
-
-private:
-    Vec3 center_;
-    double radius_;
-};
-
-struct ClosestElement {
+struct ClosestObject {
     int index;
     double distance;
 };
 
 class Scene {
 public:
-    void add_element(std::unique_ptr<Renderable> r) {
-        elements_.push_back(std::move(r));
-    }
-
-    ClosestElement closest_element(const Vec3& p) const noexcept;
+    Scene(std::array<Object, MaxObjects> objects)
+        : objects_{objects}, num_objects_{objects.size()}
+    {}
+    Result<ClosestObject, void> closest_object(const Vec3& p) const noexcept;
 
 private:
-    std::vector<std::unique_ptr<Renderable>> elements_;
+    std::array<Object, MaxObjects> objects_;
+    int num_objects_;
 };

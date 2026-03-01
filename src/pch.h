@@ -10,3 +10,6 @@
 #include <ranges>
 #include <algorithm>
 #include <numbers>
+#include <array>
+#include <exception>
+#include "result.h"
