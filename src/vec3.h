@@ -1,5 +1,7 @@
 #pragma once
 
+// #define LOG
+
 struct Vec3 {
     constexpr double length_squared() const noexcept {
         return x * x + y * y + z * z;
@@ -42,7 +44,7 @@ constexpr Vec3 operator*(const Vec3& v, double d) {
 }
 
 constexpr Vec3 operator*(double d, const Vec3& v) {
-    return { v.x * d, v.y * d, v.z * d };
+    return v * d;
 }
 
 constexpr double dot(const Vec3& a, const Vec3& b) noexcept {

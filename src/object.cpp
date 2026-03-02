@@ -1,4 +1,5 @@
 #include "pch.h"
+
 #include "object.h"
 
 double Object::sdf(const Vec3& p) const noexcept {
