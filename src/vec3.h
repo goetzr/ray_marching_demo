@@ -1,7 +1,5 @@
 #pragma once
 
-// #define LOG
-
 struct Vec3 {
     constexpr double length_squared() const noexcept {
         return x * x + y * y + z * z;

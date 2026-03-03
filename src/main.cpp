@@ -9,8 +9,8 @@
 #include "sphere.h"
 
 constexpr RectF kOutputSize = {
-    .width = 800,
-    .height = 600
+    .width = 320,
+    .height = 240
 };
 constexpr double kOutputAspectRatio = kOutputSize.width / kOutputSize.height;
 
@@ -48,17 +48,17 @@ Fov get_adjusted_fov(const Camera& camera) {
  * @param py      The pixel's y coordinate.
  * @param camera  The camera.
  * @param fov     The final FOV, adjusted for an aspect ratio mismatch between the raster and the sensor.
- * @param scene   The scene holding the elements to render.
+ * @param scene   The scene holding the objects to render.
  * 
  * @return Returns the pixel's color in ARGB8888 format.
  */
 Result<uint32_t, void> raymarch_pixel(int px, int py, const Camera& camera, Fov fov, const Scene& scene)
 {
-    // A ray that has marched further than this distance is defined to have missed all elements in the scene.
+    // A ray that has marched further than this distance is defined to have missed all objects in the scene.
     static constexpr double kMaxDist = 1000;
-    // A ray that has been marched this many steps is defined to have missed all elements in the scene.
+    // A ray that has been marched this many steps is defined to have missed all objects in the scene.
     static constexpr int kMaxSteps = 10;
-    // A ray has hit an element in the scene if its distance to that element is less than Epsilon.
+    // A ray has hit an object in the scene if its distance to that object is less than Epsilon.
     static constexpr double kEpsilon = 0.001;
 
     // NOTE: The raster is sampled from the portion of the scene visible on the virtual canvas.
@@ -78,33 +78,14 @@ Result<uint32_t, void> raymarch_pixel(int px, int py, const Camera& camera, Fov 
     double u = (px + 0.5) / kOutputSize.width;
     double v = (py + 0.5) / kOutputSize.height;
 
-    #ifdef LOG
-    if (px == log_x && py == log_y) {
-        std::cout << "u = " << u << ", v = " << v << "\n";
-    }
-    #endif
-
     // Convert from NSC to Normalized Device Coordinates (NDC).
     // NDC space has its origin at the center and coordinates are in the range [-1, 1].
     double x_ndc = 2 * u - 1;
     double y_ndc = 1 - 2 * v;
 
-    #ifdef LOG
-    if (px == log_x && py == log_y) {
-        std::cout << "x_ndc = " << x_ndc << ", y_ndc = " << y_ndc << "\n";
-    }
-    #endif
-
     // Calculate the ray direction angles, relative to the direction the camera is facing.
     double ray_dir_horiz = x_ndc * (fov.horiz / 2);
     double ray_dir_vert  = y_ndc * (fov.vert  / 2);
-
-    #ifdef LOG
-    if (px == log_x && py == log_y) {
-        std::cout << "Ray direction (relative to camera), horizontal = "
-            << rad2deg(ray_dir_horiz) << ", vertical = " << rad2deg(ray_dir_vert) << "\n";
-    }
-    #endif
 
     // Calculate the ray direction vector, in camera coordinates.
     double xz_plane_len = std::cos(ray_dir_vert);
@@ -114,110 +95,52 @@ Result<uint32_t, void> raymarch_pixel(int px, int py, const Camera& camera, Fov 
     double ray_dir_z = -xz_plane_len * std::cos(ray_dir_horiz);
     Vec3 ray_dir_cam = Vec3 { ray_dir_x, ray_dir_y, ray_dir_z };
 
-    #ifdef LOG
-    if (px == log_x && py == log_y) {
-        std::cout << "Ray direction, camera coords, x = "
-            << ray_dir_cam.x << ", y = " << ray_dir_cam.y << ", z = " << ray_dir_cam.z << "\n";
-    }
-    #endif
-
     // Convert the ray direction vector into world coordinates.
     Vec3 ray_dir = camera.basis() * ray_dir_cam;
 
-    #ifdef LOG
-    if (px == log_x && py == log_y) {
-        std::cout << "Ray direction, world coords, x = "
-            << ray_dir.x << ", y = " << ray_dir.y << ", z = " << ray_dir.z << "\n";
-    }
-    #endif
-
-    // March the ray until it hits an object in the scene or misses all elements
+    // Use the distance to the closest object as the initial ray length.
     Vec3 current_position = camera.position();
     Result<ClosestObject, void> closest_obj = scene.closest_object(camera.position());
     if (!closest_obj.is_ok()) {
         return Result<uint32_t, void>::err();
     }
-
-    #ifdef LOG
-    if (px == log_x && py == log_y) {
-        std::cout << "Object closest to camera is " << closest_obj.value().distance << "m away\n";
-    }
-    #endif
-
     double ray_len = closest_obj.value().distance;
-    for (int step = 0; step != kMaxSteps && ray_len <= kMaxDist; ++step) {
-        current_position = camera.position() + ray_dir * ray_len;
 
-        #ifdef LOG
-        if (px == log_x && py == log_y) {
-            std::cout << "Current position, world coords, x = "
-                << current_position.x << ", y = " << current_position.y << ", z = "
-                << current_position.z << "\n";
-        }
-        #endif
+    // Return a black pixel if the ray doesn't hit an object.
+    uint32_t pixel_argb = 0xff000000;
+
+    // March the ray until it hits an object in the scene or misses all objects.
+    int step;
+    for (step = 0; step != kMaxSteps && ray_len <= kMaxDist; ++step) {
+        current_position = camera.position() + ray_dir * ray_len;
 
         closest_obj = scene.closest_object(current_position);
         if (!closest_obj.is_ok()) {
             return Result<uint32_t, void>::err();
         }
-
-        #ifdef LOG
-        if (px == log_x && py == log_y) {
-            std::cout << "Closest object to position is " << closest_obj.value().distance << "m away\n";
-        }
-        #endif
         
         if (closest_obj.value().distance < kEpsilon) {
             // Ray hit an object.
-
-            #ifdef LOG
-            if (px == log_x && py == log_y) {
-                std::cout << "Ray hit an object!\n";
-            }
-            #endif
 
             // Determine if the point should be visible by converting it back into camera coordinates
             // and checking it against the near/far clipping planes.
             Vec3 cur_pos_cam = camera.world_to_camera().rotation * current_position +
                 camera.world_to_camera().translation;
 
-            #ifdef LOG
-            if (px == log_x && py == log_y) {
-                std::cout << "Current position, camera coords, x = " << cur_pos_cam.x
-                    << ", y = " << cur_pos_cam.y << ", z = " << cur_pos_cam.z << "\n";
-            }
-            #endif
-
             // Negate the z coordinate to get the point's distance from the camera.
             double dist_z = -cur_pos_cam.z;
             if (dist_z >= camera.clip_near() && dist_z <= camera.clip_far()) {
-                #ifdef LOG
-                if (px == log_x && py == log_y) {
-                    std::cout << "Object inside clipping planes: visible!\n";
-                }
-                #endif
-                return Result<uint32_t, void>::ok(0xffff0000);
-            } else {
-                #ifdef LOG
-                if (px == log_x && py == log_y) {
-                    std::cout << "Object outside clipping planes: NOT visible!\n";
-                }
-                #endif
-                return Result<uint32_t, void>::ok(0xff000000);
+                // The position should be visible. Return a color of red.
+                pixel_argb = 0xffff0000;
             }
+
+            break;
         }
 
         ray_len += closest_obj.value().distance;
     }
 
-    // Ray missed all objects in the scene.
-    #ifdef LOG
-    if (px == log_x && py == log_y) {
-        std::cout << "Ray missed all objects!\n";
-    }
-    #endif
-
-    return Result<uint32_t, void>::ok(0xff000000);
+    return Result<uint32_t, void>::ok(pixel_argb);
 }
 
 int main(int argc, char** argv)
@@ -269,7 +192,7 @@ int main(int argc, char** argv)
 
     // Create the camera.
     double sensor_aspect_ratio = 3.0 / 2;
-    double fov_horiz = 60;
+    double fov_horiz = 80;
     double clip_near = 0.1;
     double clip_far = 100;
     Vec3 cam_pos = { 0, 0, 0 };
@@ -283,11 +206,6 @@ int main(int argc, char** argv)
 
      // Adjust the FOV for an aspect ratio mismatch between the raster and the sensor.
     Fov fov = get_adjusted_fov(camera);
-
-    #ifdef LOG
-    std::cout << "Adjusted FOV, horizontal = " << rad2deg(fov.horiz)
-        << " deg, vertical = " << rad2deg(fov.vert) << "\n";
-    #endif
 
     // Create the scene to render.
     // NOTE: The camera is facing along the negative z-axis.
@@ -322,7 +240,7 @@ int main(int argc, char** argv)
                 Result<uint32_t, void> px_color = raymarch_pixel(x, y, camera, fov, scene);
                 if (!px_color.is_ok()) {
                     std::cerr << "ERROR: raymarching failed" << std::endl;
-                    break;
+                    return 1;
                 }
                 pixels[y * kOutputSize.width + x] = px_color.value();
             }
