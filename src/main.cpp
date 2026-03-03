@@ -202,7 +202,7 @@ int main(int argc, char** argv)
     Camera camera {
         sensor_aspect_ratio, fov_horiz, SensorFit::Overscan, clip_near, clip_far,
         cam_pos, cam_rot_x, cam_rot_y, cam_rot_z
-     };
+    };
 
      // Adjust the FOV for an aspect ratio mismatch between the raster and the sensor.
     Fov fov = get_adjusted_fov(camera);
