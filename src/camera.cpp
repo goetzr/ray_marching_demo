@@ -27,7 +27,7 @@ Camera::Camera(double sensor_aspect_ratio, double fov_horiz, SensorFit sensor_fi
     Mat3 r_x {
         Vec3 { 1, 0, 0 },
         Vec3 { 0, std::cos(rot_x), std::sin(rot_x) },
-        Vec3 { 0, -std::sin(rot_z), std::cos(rot_z) }
+        Vec3 { 0, -std::sin(rot_x), std::cos(rot_x) }
     };
 
     Mat3 r_y {
@@ -42,12 +42,28 @@ Camera::Camera(double sensor_aspect_ratio, double fov_horiz, SensorFit sensor_fi
         Vec3 { 0, 0, 1 }
     };
 
+    // std::cout << "r_x, i_hat = { " << r_x.c[0].x << ", " << r_x.c[0].y << ", " << r_x.c[0].z << " }\n";
+    // std::cout << "r_x, j_hat = { " << r_x.c[1].x << ", " << r_x.c[1].y << ", " << r_x.c[1].z << " }\n";
+    // std::cout << "r_x, k_hat = { " << r_x.c[2].x << ", " << r_x.c[2].y << ", " << r_x.c[2].z << " }\n";
+
+    // std::cout << "r_y, i_hat = { " << r_y.c[0].x << ", " << r_y.c[0].y << ", " << r_y.c[0].z << " }\n";
+    // std::cout << "r_y, j_hat = { " << r_y.c[1].x << ", " << r_y.c[1].y << ", " << r_y.c[1].z << " }\n";
+    // std::cout << "r_y, k_hat = { " << r_y.c[2].x << ", " << r_y.c[2].y << ", " << r_y.c[2].z << " }\n";
+
+    // std::cout << "r_z, i_hat = { " << r_z.c[0].x << ", " << r_z.c[0].y << ", " << r_z.c[0].z << " }\n";
+    // std::cout << "r_z, j_hat = { " << r_z.c[1].x << ", " << r_z.c[1].y << ", " << r_z.c[1].z << " }\n";
+    // std::cout << "r_z, k_hat = { " << r_z.c[2].x << ", " << r_z.c[2].y << ", " << r_z.c[2].z << " }\n";
+
     // XYZ Euler.
     Mat3 new_basis = r_z * r_y * r_x * basis;
 
     i_hat_ = new_basis.c[0];
     j_hat_ = new_basis.c[1];
     k_hat_ = new_basis.c[2];
+
+    // std::cout << "i_hat = { " << i_hat_.x << ", " << i_hat_.y << ", " << i_hat_.z << " }\n";
+    // std::cout << "j_hat = { " << j_hat_.x << ", " << j_hat_.y << ", " << j_hat_.z << " }\n";
+    // std::cout << "k_hat = { " << k_hat_.x << ", " << k_hat_.y << ", " << k_hat_.z << " }\n";
 
     // NOTE: This is unnecessary for a raymarcher. The desired FOV is specified directly.
     // fov_.horiz = 2 * std::atan2(sensor_sz_.width  * kInchesToMm / 2,  focal_len_);
