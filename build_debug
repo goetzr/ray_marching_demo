@@ -19,4 +19,4 @@ mkdir -p "${MAKEFILES_BUILD_DIR}"
 cmake -G "Unix Makefiles" -S "${SRC_DIR}" -DCMAKE_BUILD_TYPE:STRING=Debug -B "${MAKEFILES_BUILD_DIR}"
 cmake --build "${MAKEFILES_BUILD_DIR}"
 
-ln -sf "${NINJA_BUILD_DIR}/ray_marching_demo" ray_marching_demo
+ln -sf "${NINJA_BUILD_DIR}/raymarcher_cpu" raymarcher_cpu

@@ -11,8 +11,6 @@
 #include "box2d.h"
 
 constexpr RectI kOutputSize = {
-    // .width = 320,
-    // .height = 240
     .width = 1024,
     .height = 768
 };
@@ -26,19 +24,15 @@ Fov get_adjusted_fov(const Camera& camera) {
     switch (sensor_fit) {
         case SensorFit::Fill:
             if (sensor_aspect_ratio > kOutputAspectRatio) {
-                // fov.horiz *= kOutputAspectRatio / sensor_aspect_ratio;
                 fov.horiz = 2 * std::atan(std::tan(fov.vert * 0.5) * kOutputAspectRatio);
             } else if (sensor_aspect_ratio < kOutputAspectRatio) {
-                // fov.vert *= sensor_aspect_ratio / kOutputAspectRatio;
                 fov.vert = 2 * std::atan(std::tan(fov.horiz * 0.5) / kOutputAspectRatio);
             }
             break;
         case SensorFit::Overscan:
             if (sensor_aspect_ratio > kOutputAspectRatio) {
-                // fov.vert *= sensor_aspect_ratio / kOutputAspectRatio;
                 fov.vert = 2 * std::atan(std::tan(fov.horiz * 0.5) / kOutputAspectRatio);
             } else if (sensor_aspect_ratio < kOutputAspectRatio) {
-                // fov.horiz *= kOutputAspectRatio / sensor_aspect_ratio;
                 fov.horiz = 2 * std::atan(std::tan(fov.vert * 0.5) * kOutputAspectRatio);
             }
             break;
@@ -50,21 +44,10 @@ Fov get_adjusted_fov(const Camera& camera) {
     return fov;
 }
 
-/**
- * Raymarch the specified pixel to determine its color.
- * 
- * @param px      The pixel's x coordinate.
- * @param py      The pixel's y coordinate.
- * @param camera  The camera.
- * @param fov     The final FOV, adjusted for an aspect ratio mismatch between the raster and the sensor.
- * @param scene   The scene holding the objects to render.
- * 
- * @return Returns the pixel's color in ARGB8888 format.
- */
-Result<uint32_t, void> raymarch_pixel(int px, int py, const Camera& camera, Fov fov, const Scene& scene)
+std::optional<uint32_t> raymarch_pixel(int px, int py, const Camera& camera, Fov fov, const Scene& scene)
 {
     // A ray that has marched further than this distance is defined to have missed all objects in the scene.
-    static constexpr double kMaxDist = 1000;
+    static constexpr double kMaxDist = 200;
     // A ray that has been marched this many steps is defined to have missed all objects in the scene.
     static constexpr int kMaxSteps = 40;
     // A ray has hit an object in the scene if its distance to that object is less than Epsilon.
@@ -103,9 +86,9 @@ Result<uint32_t, void> raymarch_pixel(int px, int py, const Camera& camera, Fov 
 
     // Use the distance to the closest object as the initial ray length.
     Vec3 current_position = camera.position();
-    Result<ClosestObject, void> closest_obj = scene.closest_object(camera.position());
-    if (!closest_obj.is_ok()) {
-        return Result<uint32_t, void>::err();
+    auto closest_obj = scene.closest_object(camera.position());
+    if (!closest_obj) {
+        return std::nullopt;
     }
     double ray_len = closest_obj.value().distance;
 
@@ -116,9 +99,10 @@ Result<uint32_t, void> raymarch_pixel(int px, int py, const Camera& camera, Fov 
     for (int step = 0; step != kMaxSteps && ray_len <= kMaxDist; ++step) {
         current_position = camera.position() + ray_dir * ray_len;
 
+
         closest_obj = scene.closest_object(current_position);
-        if (!closest_obj.is_ok()) {
-            return Result<uint32_t, void>::err();
+        if (!closest_obj) {
+            return std::nullopt;
         }
         
         if (closest_obj.value().distance < kEpsilon) {
@@ -142,7 +126,7 @@ Result<uint32_t, void> raymarch_pixel(int px, int py, const Camera& camera, Fov 
         ray_len += closest_obj.value().distance;
     }
 
-    return Result<uint32_t, void>::ok(pixel_argb);
+    return std::make_optional(pixel_argb);
 }
 
 int main(int argc, char** argv)
@@ -156,7 +140,7 @@ int main(int argc, char** argv)
     }
 
     SDL_Window* window = SDL_CreateWindow(
-        "Raymarching on CPU",
+        "CPU Raymarcher",
         kOutputSize.width, kOutputSize.height,
         SDL_WINDOW_RESIZABLE
     );
@@ -187,8 +171,7 @@ int main(int argc, char** argv)
     }
 
     // Allocate the CPU pixel buffer.
-    auto pixels = std::make_unique<uint32_t[]>(kOutputSize.width * kOutputSize.height);
-    // std::vector<uint32_t> pixels { kOutputSize.width * kOutputSize.height };
+    std::vector<uint32_t> pixels(kOutputSize.width * kOutputSize.height);
 
     // Create the camera.
     double sensor_aspect_ratio = 3.0 / 2;
@@ -196,12 +179,10 @@ int main(int argc, char** argv)
     double clip_near = 0.1;
     double clip_far = 100;
     Vec3 cam_pos { 0, 0, 0 };
-    double cam_rot_x = 0;
-    double cam_rot_y = 0;
-    double cam_rot_z = 0;
+    EulerAngles cam_rot { 0, 0, 0 };
     Camera camera {
         sensor_aspect_ratio, fov_horiz, SensorFit::Overscan, clip_near, clip_far,
-        cam_pos, cam_rot_x, cam_rot_y, cam_rot_z
+        cam_pos, cam_rot
     };
 
      // Adjust the FOV for an aspect ratio mismatch between the raster and the sensor.
@@ -211,40 +192,22 @@ int main(int argc, char** argv)
     // NOTE: The camera is facing along the negative z-axis.
     //       If an object is to be visible, its z coordinate must be negative.
     std::array<Object, MaxObjects> scene_objects = {
-        // Sphere {
-        //     Vec3 { 10, 0, -60 },    // center
-        //     10                      // radius
-        // },
-        // Cube {
-        //     Vec3 { 0, 0, -30 },   // center
-        //     10,                     // side length
-        //     EulerAngles { 0, 0, 0 } // rotation
-        // }
-        // Sphere {
-        //     Vec3 { 0, 0, -30 },    // center
-        //     10                      // radius
-        // }
-        // Box2D {
-        //     Vec3 { 0, 0, -30 },   // center
-        //     { 10, 10 },           // size
-        //     EulerAngles { 0, 45, 0 } // rotation
-        // }
         Sphere {
-            Vec3 { -15, 0, -30 },    // center
-            5                      // radius
+            Vec3 { -15, 0, -30 },
+            5
         },
         Cube {
-            Vec3 { 0, 0, -30 },   // center
-            10,                     // side length
-            EulerAngles { 0, 45, 0 } // rotation
+            Vec3 { 0, 0, -30 },
+            10,
+            EulerAngles { 0, 45, 0 }
         },
         Box2D {
-            Vec3 { 15, 0, -30 },   // center
-            { 10, 10 },           // size
-            EulerAngles { 0, 45, 0 } // rotation
+            Vec3 { 15, 0, -30 },
+            { 10, 10 },
+            EulerAngles { 0, 45, 0 }
         }
     };
-    Scene scene{scene_objects};
+    Scene scene { scene_objects };
 
     // ----------------------------------------------------------------------
     // Main Loop.
@@ -262,12 +225,12 @@ int main(int argc, char** argv)
             break;
         }
 
-        // Compute pixels on CPU.
+        // Compute pixels on the CPU.
         for (int y = 0; y < kOutputSize.height; y++) {
             for (int x = 0; x < kOutputSize.width; x++) {
-                Result<uint32_t, void> px_color = raymarch_pixel(x, y, camera, fov, scene);
-                if (!px_color.is_ok()) {
-                    std::cerr << "ERROR: raymarching failed" << std::endl;
+                auto px_color = raymarch_pixel(x, y, camera, fov, scene);
+                if (!px_color) {
+                    std::cerr << "ERROR: raymarching failed\n";
                     return 1;
                 }
                 pixels[y * kOutputSize.width + x] = px_color.value();
@@ -275,7 +238,7 @@ int main(int argc, char** argv)
         }
 
         // Update SDL texture with pixel buffer
-        SDL_UpdateTexture(texture, nullptr, pixels.get(), kOutputSize.width * sizeof(uint32_t));
+        SDL_UpdateTexture(texture, nullptr, pixels.data(), kOutputSize.width * sizeof(uint32_t));
 
         // Render the texture to the window
         SDL_RenderClear(renderer);

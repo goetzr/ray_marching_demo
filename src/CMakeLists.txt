@@ -1,17 +1,17 @@
 cmake_minimum_required(VERSION 4.2)
-project(ray_marching_demo
+project(raymarcher_cpu
     VERSION 0.0.1
     LANGUAGES CXX
 )
 
-# Require C++ 20
-set(CMAKE_CXX_STANDARD 20)
+# Require C++ 23
+set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 include(FetchContent)
 
-add_executable(ray_marching_demo
+add_executable(raymarcher_cpu
     main.cpp
     util.cpp
     camera.cpp
@@ -21,7 +21,7 @@ add_executable(ray_marching_demo
     box2d.cpp
 )
 
-target_precompile_headers(ray_marching_demo PRIVATE pch.h)
+target_precompile_headers(raymarcher_cpu PRIVATE pch.h)
 
 # Declare the external SDL3 library content
 FetchContent_Declare(
@@ -33,4 +33,4 @@ FetchContent_Declare(
 # Make the SDL3 library available and process its CMakeLists.txt file
 FetchContent_MakeAvailable(sdl3)
 
-target_link_libraries(ray_marching_demo PRIVATE SDL3::SDL3)
+target_link_libraries(raymarcher_cpu PRIVATE SDL3::SDL3)

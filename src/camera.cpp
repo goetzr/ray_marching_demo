@@ -4,7 +4,7 @@
 #include "util.h"
 
 Camera::Camera(double sensor_aspect_ratio, double fov_horiz, SensorFit sensor_fit, double clip_near, double clip_far,
-           Vec3 pos, double rot_x, double rot_y, double rot_z) noexcept
+           Vec3 pos, EulerAngles rotation) noexcept
         : sensor_aspect_ratio_{sensor_aspect_ratio}, fov_{}, sensor_fit_{sensor_fit},
           clip_near_{clip_near}, clip_far_{clip_far}, pos_{pos}, basis_{},
           world_to_camera_{}
@@ -12,7 +12,10 @@ Camera::Camera(double sensor_aspect_ratio, double fov_horiz, SensorFit sensor_fi
     fov_.horiz = deg2rad(fov_horiz);
     fov_.vert = 2 * std::atan(std::tan(fov_.horiz * 0.5) / sensor_aspect_ratio);
 
-    EulerAngles rotation = { deg2rad(rot_x), deg2rad(rot_y), deg2rad(rot_z) };
+    // Calculate the basis vectors from the rotation.
+    rotation.x = deg2rad(rotation.x);
+    rotation.y = deg2rad(rotation.y);
+    rotation.z = deg2rad(rotation.z);
     basis_ = generate_basis(rotation);
 
     // NOTE: This is unnecessary for a raymarcher. The desired FOV is specified directly.

@@ -3,12 +3,10 @@
 #include "vec3.h"
 #include "common_defs.h"
 #include "mat3.h"
-#include "util.h"
 
 class Cube {
 public:
     Cube(Vec3 center, double side_len, EulerAngles rotation) noexcept;
-
     double sdf(const Vec3& p) const noexcept;
 
 private:

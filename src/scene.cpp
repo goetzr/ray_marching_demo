@@ -2,10 +2,9 @@
 
 #include "scene.h"
 
-Result<ClosestObject, void> Scene::closest_object(const Vec3& p) const noexcept {
-    if (num_objects_ == 0 ) {
-        // No objects in the scene.
-        return Result<ClosestObject, void>::err();
+std::optional<ClosestObject> Scene::closest_object(const Vec3& p) const noexcept {
+    if (objects_.empty()) {
+        return std::nullopt;
     }
 
     ClosestObject closest_elem {
@@ -13,7 +12,7 @@ Result<ClosestObject, void> Scene::closest_object(const Vec3& p) const noexcept 
         .distance = objects_[0].sdf(p)
     };
 
-    for (int i = 1; i != num_objects_; ++i) {
+    for (int i = 1; i != objects_.size(); ++i) {
         double dist = objects_[i].sdf(p);
         if (dist < closest_elem.distance) {
             closest_elem.index = i;
@@ -21,5 +20,5 @@ Result<ClosestObject, void> Scene::closest_object(const Vec3& p) const noexcept 
         }
     }
 
-    return Result<ClosestObject, void>::ok(closest_elem);
+    return std::make_optional<ClosestObject>(closest_elem);
 }

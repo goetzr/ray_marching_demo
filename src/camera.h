@@ -19,14 +19,8 @@ struct Fov {
 
 class Camera {
 public:
-    /**
-     * @param fov_horiz    The horizontal FOV, in degrees.
-     * @param rot_x        The rotation angle, in degrees, around the x-axis.
-     * @param rot_y        The rotation angle, in degrees, around the y-axis.
-     * @param rot_z        The rotation angle, in degrees, around the z-axis.
-     */
     Camera(double sensor_aspect_ratio, double fov_horiz, SensorFit sensor_fit, double clip_near, double clip_far,
-           Vec3 pos, double rot_x, double rot_y, double rot_z) noexcept;
+           Vec3 pos, EulerAngles rotation) noexcept;
 
       Fov fov() const noexcept { return fov_; }
       double sensor_aspect_ratio() const noexcept { return sensor_aspect_ratio_; }

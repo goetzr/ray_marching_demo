@@ -2,9 +2,9 @@
 
 #include "util.h"
 
-Mat3 generate_basis(EulerAngles rotation) {
-    // Point your thumb along the axis away from the origin.
-    // Then curl your fingers in the direction of the rotation.
+Mat3 generate_basis(EulerAngles rotation) noexcept {
+    // Point your thumb along the positive direction of the axis of rotation
+    // then curl your fingers in the direction of the rotation.
     Mat3 rot_x {
         Vec3 { 1, 0, 0 },
         Vec3 { 0, std::cos(rotation.x), std::sin(rotation.x) },
@@ -23,14 +23,14 @@ Mat3 generate_basis(EulerAngles rotation) {
         Vec3 { 0, 0, 1 }
     };
 
-    // Standard basis.
+    // Standard, unrotated basis vectors.
     Mat3 basis  = {
         Vec3 { 1, 0, 0 },
         Vec3 { 0, 1, 0 },
         Vec3 { 0, 0, 1 }
     };
 
-    // XYZ Euler.
+    // Use an XYZ Euler rotation to rotate the standard basis vectors.
     return rot_z * rot_y * rot_x * basis;
 }
 

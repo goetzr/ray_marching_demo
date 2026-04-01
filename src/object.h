@@ -14,7 +14,7 @@ enum class ObjectType {
 
 class Object {
 public:
-    Object() noexcept : type_{ObjectType::Unused}, unused_{} {}
+    Object() noexcept : type_{ObjectType::Unused} {}
     Object(Sphere&& sphere) noexcept : type_{ObjectType::Sphere}, sphere_{sphere} {}
     Object(Cube&& cube) noexcept : type_{ObjectType::Cube}, cube_{cube} {}
     Object(Box2D&& box2d) noexcept : type_{ObjectType::Box2D}, box2d_{box2d} {}
@@ -23,7 +23,6 @@ public:
 private:
     ObjectType type_;
     union {
-        char unused_;
         Sphere sphere_;
         Cube cube_;
         Box2D box2d_;

@@ -3,10 +3,6 @@
 #include "vec3.h"
 #include "mat3.h"
 
-constexpr double kPi      = std::numbers::pi;
-constexpr double kPiOver2 = std::numbers::pi / 2;
-constexpr double kPiOver4 = std::numbers::pi / 4;
-
 struct RectF {
     double width;
     double height;
