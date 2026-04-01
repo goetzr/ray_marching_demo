@@ -17,12 +17,6 @@ struct Fov {
     double vert;
 };
 
-// The 4x4 world to camera matrix, split out into its rotation matrix and translation vector.
-struct WorldToCamera {
-    Mat3 rotation;
-    Vec3 translation;
-};
-
 class Camera {
 public:
     /**
@@ -37,16 +31,11 @@ public:
       Fov fov() const noexcept { return fov_; }
       double sensor_aspect_ratio() const noexcept { return sensor_aspect_ratio_; }
       SensorFit sensor_fit() const noexcept { return sensor_fit_; }
-      Mat3 basis() const noexcept {
-        return { i_hat_, j_hat_, k_hat_ };
-      }
+      Mat3 basis() const noexcept { return basis_; }
       Vec3 position() const noexcept { return pos_; }
-      const WorldToCamera& world_to_camera() const noexcept { return world_to_camera_; }
+      const CoordTransform& world_to_camera() const noexcept { return world_to_camera_; }
       double clip_near() const noexcept { return clip_near_; }
       double clip_far() const noexcept { return clip_far_; }
-
-private:
-      void calc_world_to_camera() noexcept;
     
 private:
     // The focal length and sensor size define the **internal** geometry of the camera.
@@ -87,14 +76,12 @@ private:
     //   j_hat points up along the y-axis,
     //   k_hat points backward along the z-axis, opposite the camera's forward direction.
     // These basis vectors are expressed in world coordinates.
-    Vec3 i_hat_;
-    Vec3 j_hat_;
-    Vec3 k_hat_;    // points backward
+    Mat3 basis_;
 
     // The size, in world units, of the canvas.
     // NOTE: This is unnecessary for a raymarcher.
     // RectF canvas_sz_;
 
     // The 4x4 world to camera matrix.
-    WorldToCamera world_to_camera_;
+    CoordTransform world_to_camera_;
 };

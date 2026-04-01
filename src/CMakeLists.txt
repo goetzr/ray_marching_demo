@@ -13,9 +13,12 @@ include(FetchContent)
 
 add_executable(ray_marching_demo
     main.cpp
+    util.cpp
     camera.cpp
     object.cpp
     scene.cpp
+    cube.cpp
+    box2d.cpp
 )
 
 target_precompile_headers(ray_marching_demo PRIVATE pch.h)

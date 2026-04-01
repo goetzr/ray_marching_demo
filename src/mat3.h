@@ -7,9 +7,9 @@ struct Mat3 {
 
     Mat3 transpose() const noexcept {
         return {
-            Vec3 { c[0].x, c[0].y, c[0].z },
-            Vec3 { c[1].x, c[1].y, c[1].z },
-            Vec3 { c[2].x, c[2].y, c[2].z }
+            Vec3 { c[0].x, c[1].x, c[2].x },
+            Vec3 { c[0].y, c[1].y, c[2].y },
+            Vec3 { c[0].z, c[1].z, c[2].z }
         };
     }
 

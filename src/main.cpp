@@ -7,10 +7,14 @@
 #include "camera.h"
 #include "scene.h"
 #include "sphere.h"
+#include "cube.h"
+#include "box2d.h"
 
-constexpr RectF kOutputSize = {
-    .width = 320,
-    .height = 240
+constexpr RectI kOutputSize = {
+    // .width = 320,
+    // .height = 240
+    .width = 1024,
+    .height = 768
 };
 constexpr double kOutputAspectRatio = kOutputSize.width / kOutputSize.height;
 
@@ -22,19 +26,24 @@ Fov get_adjusted_fov(const Camera& camera) {
     switch (sensor_fit) {
         case SensorFit::Fill:
             if (sensor_aspect_ratio > kOutputAspectRatio) {
-                fov.horiz *= kOutputAspectRatio / sensor_aspect_ratio;
+                // fov.horiz *= kOutputAspectRatio / sensor_aspect_ratio;
+                fov.horiz = 2 * std::atan(std::tan(fov.vert * 0.5) * kOutputAspectRatio);
             } else if (sensor_aspect_ratio < kOutputAspectRatio) {
-                fov.vert *= sensor_aspect_ratio / kOutputAspectRatio;
+                // fov.vert *= sensor_aspect_ratio / kOutputAspectRatio;
+                fov.vert = 2 * std::atan(std::tan(fov.horiz * 0.5) / kOutputAspectRatio);
             }
             break;
         case SensorFit::Overscan:
             if (sensor_aspect_ratio > kOutputAspectRatio) {
-                fov.vert *= sensor_aspect_ratio / kOutputAspectRatio;
+                // fov.vert *= sensor_aspect_ratio / kOutputAspectRatio;
+                fov.vert = 2 * std::atan(std::tan(fov.horiz * 0.5) / kOutputAspectRatio);
             } else if (sensor_aspect_ratio < kOutputAspectRatio) {
-                fov.horiz *= kOutputAspectRatio / sensor_aspect_ratio;
+                // fov.horiz *= kOutputAspectRatio / sensor_aspect_ratio;
+                fov.horiz = 2 * std::atan(std::tan(fov.vert * 0.5) * kOutputAspectRatio);
             }
             break;
         default:
+            std::cerr << "ERROR: invalid SensorFit method\n";
             std::terminate();
     }
 
@@ -57,7 +66,7 @@ Result<uint32_t, void> raymarch_pixel(int px, int py, const Camera& camera, Fov 
     // A ray that has marched further than this distance is defined to have missed all objects in the scene.
     static constexpr double kMaxDist = 1000;
     // A ray that has been marched this many steps is defined to have missed all objects in the scene.
-    static constexpr int kMaxSteps = 10;
+    static constexpr int kMaxSteps = 40;
     // A ray has hit an object in the scene if its distance to that object is less than Epsilon.
     static constexpr double kEpsilon = 0.001;
 
@@ -70,9 +79,6 @@ Result<uint32_t, void> raymarch_pixel(int px, int py, const Camera& camera, Fov 
     //         screen space has its origin at the center and coordinates are in the range [-1, 1]
     //       Both conventions arrive at the same result.
 
-    double log_x = kOutputSize.width / 2;
-    double log_y = kOutputSize.height / 2;
-
     // Convert from raster coordinates to Normalized Screen Coordinates (NSC).
     // NSC space has its origin at the top-left and coordinates are in the range [0, 1].
     double u = (px + 0.5) / kOutputSize.width;
@@ -83,17 +89,14 @@ Result<uint32_t, void> raymarch_pixel(int px, int py, const Camera& camera, Fov 
     double x_ndc = 2 * u - 1;
     double y_ndc = 1 - 2 * v;
 
-    // Calculate the ray direction angles, relative to the direction the camera is facing.
-    double ray_dir_horiz = x_ndc * (fov.horiz / 2);
-    double ray_dir_vert  = y_ndc * (fov.vert  / 2);
+    // Apply the NDC coordinates to the FOV to get a ray direction vector in camera space.
+    // Assume the virtual canvas is 1 unit away from the camera along the z-axis (simplifies tan).
+    double x_cam = x_ndc * std::tan(fov.horiz * 0.5);
+    double y_cam = y_ndc * std::tan(fov.vert  * 0.5);
+    double z_cam = -1;
 
-    // Calculate the ray direction vector, in camera coordinates.
-    double xz_plane_len = std::cos(ray_dir_vert);
-    double ray_dir_x = xz_plane_len * std::sin(ray_dir_horiz);
-    double ray_dir_y = std::sin(ray_dir_vert);
-    // NOTE: The z coordinate is explicitly negated because the camera points along the -z axis.
-    double ray_dir_z = -xz_plane_len * std::cos(ray_dir_horiz);
-    Vec3 ray_dir_cam = Vec3 { ray_dir_x, ray_dir_y, ray_dir_z };
+    // Normalize the ray direction vector.
+    Vec3 ray_dir_cam = Vec3 { x_cam, y_cam, z_cam }.normalize();
 
     // Convert the ray direction vector into world coordinates.
     Vec3 ray_dir = camera.basis() * ray_dir_cam;
@@ -110,8 +113,7 @@ Result<uint32_t, void> raymarch_pixel(int px, int py, const Camera& camera, Fov 
     uint32_t pixel_argb = 0xff000000;
 
     // March the ray until it hits an object in the scene or misses all objects.
-    int step;
-    for (step = 0; step != kMaxSteps && ray_len <= kMaxDist; ++step) {
+    for (int step = 0; step != kMaxSteps && ray_len <= kMaxDist; ++step) {
         current_position = camera.position() + ray_dir * ray_len;
 
         closest_obj = scene.closest_object(current_position);
@@ -154,11 +156,10 @@ int main(int argc, char** argv)
     }
 
     SDL_Window* window = SDL_CreateWindow(
-        "Raymarching Demo",
+        "Raymarching on CPU",
         kOutputSize.width, kOutputSize.height,
         SDL_WINDOW_RESIZABLE
     );
-
     if (!window) {
         std::cerr << "SDL_CreateWindow failed: " << SDL_GetError() << "\n";
         return 1;
@@ -169,7 +170,6 @@ int main(int argc, char** argv)
     // A streaming texture is the fastest CPU blit (block transfer) path.
     // ----------------------------------------------------------------------
     SDL_Renderer* renderer = SDL_CreateRenderer(window, nullptr);
-
     if (!renderer) {
         std::cerr << "SDL_CreateRenderer failed: " << SDL_GetError() << "\n";
         return 1;
@@ -181,21 +181,21 @@ int main(int argc, char** argv)
         SDL_TEXTUREACCESS_STREAMING,
         kOutputSize.width, kOutputSize.height
     );
-
     if (!texture) {
         std::cerr << "SDL_CreateTexture failed: " << SDL_GetError() << "\n";
         return 1;
     }
 
     // Allocate the CPU pixel buffer.
-    std::unique_ptr<uint32_t[]> pixels = std::make_unique<uint32_t[]>(kOutputSize.width * kOutputSize.height);
+    auto pixels = std::make_unique<uint32_t[]>(kOutputSize.width * kOutputSize.height);
+    // std::vector<uint32_t> pixels { kOutputSize.width * kOutputSize.height };
 
     // Create the camera.
     double sensor_aspect_ratio = 3.0 / 2;
     double fov_horiz = 80;
     double clip_near = 0.1;
     double clip_far = 100;
-    Vec3 cam_pos = { 0, 0, 0 };
+    Vec3 cam_pos { 0, 0, 0 };
     double cam_rot_x = 0;
     double cam_rot_y = 0;
     double cam_rot_z = 0;
@@ -211,9 +211,37 @@ int main(int argc, char** argv)
     // NOTE: The camera is facing along the negative z-axis.
     //       If an object is to be visible, its z coordinate must be negative.
     std::array<Object, MaxObjects> scene_objects = {
+        // Sphere {
+        //     Vec3 { 10, 0, -60 },    // center
+        //     10                      // radius
+        // },
+        // Cube {
+        //     Vec3 { 0, 0, -30 },   // center
+        //     10,                     // side length
+        //     EulerAngles { 0, 0, 0 } // rotation
+        // }
+        // Sphere {
+        //     Vec3 { 0, 0, -30 },    // center
+        //     10                      // radius
+        // }
+        // Box2D {
+        //     Vec3 { 0, 0, -30 },   // center
+        //     { 10, 10 },           // size
+        //     EulerAngles { 0, 45, 0 } // rotation
+        // }
         Sphere {
-            Vec3 { 0, 0, -30 }, // center
-            10                  // radius
+            Vec3 { -15, 0, -30 },    // center
+            5                      // radius
+        },
+        Cube {
+            Vec3 { 0, 0, -30 },   // center
+            10,                     // side length
+            EulerAngles { 0, 45, 0 } // rotation
+        },
+        Box2D {
+            Vec3 { 15, 0, -30 },   // center
+            { 10, 10 },           // size
+            EulerAngles { 0, 45, 0 } // rotation
         }
     };
     Scene scene{scene_objects};
