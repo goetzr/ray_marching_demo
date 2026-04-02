@@ -99,7 +99,6 @@ std::optional<uint32_t> raymarch_pixel(int px, int py, const Camera& camera, Fov
     for (int step = 0; step != kMaxSteps && ray_len <= kMaxDist; ++step) {
         current_position = camera.position() + ray_dir * ray_len;
 
-
         closest_obj = scene.closest_object(current_position);
         if (!closest_obj) {
             return std::nullopt;
