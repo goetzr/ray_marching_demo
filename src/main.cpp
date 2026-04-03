@@ -14,7 +14,7 @@ constexpr RectI kOutputSize = {
     .width = 1024,
     .height = 768
 };
-constexpr double kOutputAspectRatio = kOutputSize.width / kOutputSize.height;
+constexpr double kOutputAspectRatio = (double)kOutputSize.width / kOutputSize.height;
 
 Fov get_adjusted_fov(const Camera& camera) {
     Fov fov = camera.fov();
